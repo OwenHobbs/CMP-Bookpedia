@@ -1,3 +1,3 @@
 package com.plcoding.bookpedia.core.domain
 
-interface Error
+sealed interface Error // TODO: Should this be sealed?
