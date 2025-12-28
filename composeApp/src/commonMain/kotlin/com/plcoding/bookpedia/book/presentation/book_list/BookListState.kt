@@ -6,9 +6,10 @@ import com.plcoding.bookpedia.core.presentation.UiText
 // Use Model View Intent (MVI)
 data class BookListState(
     val searchQuery: String = "",
-    val searchResults: List<Book> = dummyBooks, // TODO: make emptyList()
+    val searchResults: List<Book> = emptyList(), // TODO: use dummyBooks for preview
     val favoriteBooks: List<Book> = emptyList(),
     val isLoading: Boolean = false,
+    val isSearchQueryUpdated: Boolean = false, // TODO: hacky fix
     val selectedTabIndex: Int = 0,
     val errorMessage: UiText? = null
 )

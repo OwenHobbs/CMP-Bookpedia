@@ -91,9 +91,17 @@ private fun BookListScreen(
     val searchResultsListState = rememberLazyListState()
     val favoriteBooksListState = rememberLazyListState()
 
-    // TODO: scroll back to first item? animation?
+    // the problem with LaunchEffect is that when navigating back from book
+    // detail screen it will run even though the searchResults are unchanged
     LaunchedEffect(state.searchResults) {
-        searchResultsListState.animateScrollToItem(0)
+        if (state.isSearchQueryUpdated) {
+            searchResultsListState.animateScrollToItem(0)
+            // reset boolean to false TODO: hacky fix
+            onAction(BookListAction.OnSearchQueryChange(
+                query = "",
+                isAcknowledge = true
+            ))
+        }
     }
 
     // Use tab index to update pager state
@@ -119,7 +127,6 @@ private fun BookListScreen(
             },
             onImeSearch = {
                 keyboardController?.hide()
-                // TODO: implement search
             },
             modifier = Modifier
                 .widthIn(max = 400.dp) // max width important for desktop

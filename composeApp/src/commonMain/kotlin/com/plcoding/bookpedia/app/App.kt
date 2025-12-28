@@ -63,6 +63,7 @@ fun App() {
                     BookDetailScreenRoot(
                         viewModel = viewModel,
                         onBackClick = {
+                            // TODO: is there a way to pass arguments?
                             navController.navigateUp() // go to previous screen
                             // TODO: state is remembered except for book list scroll state?
                         }

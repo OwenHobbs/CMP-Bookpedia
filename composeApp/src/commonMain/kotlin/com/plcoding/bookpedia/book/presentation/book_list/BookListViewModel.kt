@@ -8,6 +8,7 @@ import com.plcoding.bookpedia.core.domain.onError
 import com.plcoding.bookpedia.core.domain.onSuccess
 import com.plcoding.bookpedia.core.presentation.toUiText
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.debounce
@@ -27,6 +28,7 @@ class BookListViewModel(
 
     private var cachedBooks = emptyList<Book>()
     private var searchJob: Job? = null // TODO: review
+    private var observeFavoriteBooksJob: Job? = null
 
     // TODO: What is MutableStateFlow? Why not MutableState?
     private val _state = MutableStateFlow(BookListState())
@@ -36,6 +38,12 @@ class BookListViewModel(
             if (cachedBooks.isEmpty()) {
                 observeSearchQuery()
             }
+            // When navigating to book detail screen this view model will stay active
+            // This onStart will run when view model is created and
+            // when navigating back from book detail screen.
+            // So we need to ensure previous job is cancelled
+            // Alternatively, we could use init block
+            observeFavoriteBooks()
         }
         .stateIn( // TODO: REVIEW!
             viewModelScope,
@@ -50,9 +58,19 @@ class BookListViewModel(
             }
             is BookListAction.OnSearchQueryChange -> {
                 // update state in threadsafe manner to avoid race conditions
-                _state.update {
-                    // TODO: how is book actually searched for?
-                    it.copy(searchQuery = action.query)
+                if (action.isAcknowledge) { // TODO: hacky fix
+                    _state.update {
+                        it.copy(
+                            isSearchQueryUpdated = false
+                        )
+                    }
+                } else {
+                    _state.update {
+                        it.copy(
+                            searchQuery = action.query,
+                            isSearchQueryUpdated = true
+                        )
+                    }
                 }
             }
             is BookListAction.OnTabSelected -> {
@@ -61,6 +79,18 @@ class BookListViewModel(
                 }
             }
         }
+    }
+
+    private fun observeFavoriteBooks() {
+        observeFavoriteBooksJob?.cancel()
+        observeFavoriteBooksJob = bookRepository
+            .getFavoriteBooks()
+            .onEach { favoriteBooks ->
+                _state.update { it.copy(
+                    favoriteBooks = favoriteBooks
+                ) }
+            }
+            .launchIn(viewModelScope)
     }
 
     // In order to trigger search, we need to listen to state changes of our search query field
